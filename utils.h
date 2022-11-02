@@ -9,18 +9,19 @@
 
 extern struct timespec time1, time2;
 
-#define tick()	clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &time1)
-#define tock()	clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &time2)
+#define tick()    clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &time1)
+#define tock()    clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &time2)
 
 #define ENDIAN_SWAP_32(x) (\
-	((x & 0xff000000) >> 24) | \
-	((x & 0x00ff0000) >> 8 ) | \
-	((x & 0x0000ff00) << 8 ) | \
-	((x & 0x000000ff) << 24))
+    ((x & 0xff000000) >> 24) | \
+    ((x & 0x00ff0000) >> 8 ) | \
+    ((x & 0x0000ff00) << 8 ) | \
+    ((x & 0x000000ff) << 24))
 
-typedef struct {
-	bool nonce_found;
-	uint32_t nonce;
+typedef struct
+{
+    bool nonce_found;
+    uint32_t nonce;
 } Nonce_result;
 
 long int get_execution_time();
