@@ -27,5 +27,6 @@ typedef struct
 long int get_execution_time();
 void initialize_nonce_result(Nonce_result *nr);
 void set_difficulty(unsigned char *difficulty, unsigned int nBits);
+void customize_difficulty(unsigned char* difficulty, unsigned int nBits);
 
 #endif

@@ -1,4 +1,4 @@
-#include "utils.h"
+#include "../inc/utils.h"
 
 struct timespec diff(struct timespec start, struct timespec end);
 
@@ -44,4 +44,14 @@ void set_difficulty(unsigned char *difficulty, unsigned int nBits)
     difficulty[msb++] = (nBits & 0xff0000) >> 16;
     difficulty[msb++] = (nBits & 0xff00) >> 8;
     difficulty[msb] = nBits & 0xff;
+}
+
+void customize_difficulty(unsigned char* difficulty, unsigned int nBits)
+{
+    int i;
+    for (i = 0; i < 32; i++)
+    {
+        difficulty[i] = 0;
+    }
+    difficulty[nBits] = 255;
 }
