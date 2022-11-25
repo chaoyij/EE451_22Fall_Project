@@ -3,22 +3,39 @@ OBJECTS=gpu_miner cpu_miner pthread_cpu_miner
 all: $(OBJECTS)
 
 clean:
-	 rm $(OBJECTS) sha256.o utils.o
+	rm $(OBJECTS) sha256.o utils.o parallel_cuda_impl.o parallel_cuda_impl.o profiling.o
 
-gpu_miner: main.cu utils.o sha256.o
-	 nvcc -O1 -v -lrt -lm -arch=sm_35 -o $@ $^
+gpu_miner: main.cu utils.o sha256.o parallel_cuda_impl.o
+	nvcc -O1 -v -lrt -lm -arch=sm_35 -o $@ $^
 
 verify_gpu: main.cu utils.o sha256.o
-	 nvcc -O1 -v -lrt -lm -D VERIFY_HASH -arch=sm_20 -o $@ $^
+	nvcc -O1 -v -lrt -lm -D VERIFY_HASH -arch=sm_20 -o $@ $^
 
 cpu_miner: serial_baseline.c sha256.o utils.o
-	 gcc -O1 -v -o $@ $^ -lrt
+	gcc -O1 -v -o $@ $^ -lrt
 
-pthread_cpu_miner: parallel_pthread.c sha256.o utils.o
-	 gcc -O1 -v -lrt -lm -lpthread -o $@ $^ 
+pthread_cpu_miner: parallel_pthread.c sha256.o utils.o parallel_pthread_impl.o
+	gcc -O1 -v -lrt -lm -lpthread -o $@ $^ 
+
+heterogeneous_miner: heterogeneous.cu utils.o sha256.o parallel_cuda_impl.o parallel_pthread_impl.o profiling.o
+	nvcc -O1 -v -lrt -lm -arch=sm_35 -o $@ $^
 
 sha256.o: sha256.c
-	 gcc -O1 -v -c -o $@ $^
+	gcc -O1 -v -c -o $@ $^
 
 utils.o: utils.c
-	 gcc -O1 -v -c -o $@ $^ -lrt
+	gcc -O1 -v -c -o $@ $^ -lrt
+
+parallel_pthread_impl.o: parallel_pthread_impl.c
+	gcc -O1 -v -c -o $@ $^ -lrt
+
+# cu_printf.o: cuPrintf.cu
+# 	nvcc -O1 -v -lrt -lm -arch=sm_35 -o $@ $^
+
+parallel_cuda_impl.o: parallel_cuda_impl.cu
+	nvcc -c -O1 -v -lrt -lm -arch=sm_35 -o $@ $^
+
+profiling.o: profiling.cu
+	nvcc -c -O1 -v -lrt -lm -arch=sm_35 -o $@ $^
+
+

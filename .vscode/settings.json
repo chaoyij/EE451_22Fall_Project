@@ -1,5 +1,7 @@
 {
     "files.associations": {
-        "sha256.h": "c"
+        "sha256.h": "c",
+        "parallel_pthread_impl.h": "c",
+        "sha256_unrolls.h": "c"
     }
 }
