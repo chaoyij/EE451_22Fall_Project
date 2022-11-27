@@ -35,7 +35,7 @@ extern "C" {
 */
 #ifndef VERIFY_HASH
 #define BDIMX		64			//MAX = 512
-#define GDIMX		8192		//MAX = 65535 = 2^16-1
+#define GDIMX		8		//MAX = 65535 = 2^16-1
 #define GDIMY		GDIMX
 #endif
 
@@ -91,7 +91,7 @@ int main(int argc, char **argv) {
 	*/
 	
 	//Initialize Cuda stuff
-	cudaPrintfInit();
+	// cudaPrintfInit();
 	dim3 DimGrid(GDIMX,GDIMY);
 	#ifndef ITERATE_BLOCKS
 	dim3 DimBlock(BDIMX,1);
@@ -190,8 +190,8 @@ int main(int argc, char **argv) {
 
 	//Cuda Printf output
 	cudaDeviceSynchronize();
-	cudaPrintfDisplay(stdout, true);
-	cudaPrintfEnd();
+	// cudaPrintfDisplay(stdout, true);
+	// cudaPrintfEnd();
 
 	//Free memory on device
 	CUDA_SAFE_CALL(cudaFree(d_ctx));
@@ -236,6 +236,7 @@ __global__ void kernel_sha256d(SHA256_CTX *ctx, Nonce_result *nr, void *debug) {
 	unsigned int a,b,c,d,e,f,g,h,t1,t2;
 	int i, j;
 	unsigned int nonce = NONCE_VAL;
+    printf("Enter kernel function with nonce_val:%ld\n", nonce);
 
 	//Compute SHA-256 Message Schedule
 	unsigned int *le_data = (unsigned int *) ctx->data;
@@ -319,4 +320,5 @@ __global__ void kernel_sha256d(SHA256_CTX *ctx, Nonce_result *nr, void *debug) {
 		//but it must be stored in the block in little endian order
 		nr->nonce = nonce;
 	}
+    printf("Exit kernel function.\n");
 }
