@@ -1,14 +1,3 @@
-/*
- * EC527 Final Project
- * May 8, 2015
- * Gerardo Ravago - gerardo@gcr.me
- *
- * CUDA Based GPU Bitcoin Miner
- *
- * Special Thanks
- *  Brad Conte - Reference implementation of SHA-256
- */
-
 #include <cstdio>
 #include <cstdlib>
 #include <stdbool.h>

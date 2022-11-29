@@ -10,7 +10,7 @@ int main(int argc, char *argv[])
 {
     if (argc < 3)
     {
-        printf("Wrong argument. Sample correct format: ./parallel_pthread maxNumBits maxDifficultyBits maxNumThreads\n");
+        printf("Wrong argument. Sample correct format: ./parallel_pthread maxNumBits maxDifficultyBits\n");
         return -1;
     }
 
