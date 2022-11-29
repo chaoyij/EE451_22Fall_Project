@@ -43,10 +43,6 @@ void* KernelSHA256d(void* threadArg)
 
     for (index = 0; index < length; index++)
     {
-        if (nr->nonce_found)
-        {
-            break;
-        }
         //Compute SHA-256 Message Schedule
         unsigned int* le_data = (unsigned int *) ctx->data;
         for(i = 0; i < 16; i++)
