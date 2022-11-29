@@ -14,8 +14,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "cuPrintf.cu"
-#include "cuPrintf.cuh"
+// #include "cuPrintf.cu"
+// #include "cuPrintf.cuh"
 extern "C" {
 	#include "sha256.h"
 	#include "utils.h"
@@ -91,7 +91,7 @@ int main(int argc, char **argv) {
 	*/
 	
 	//Initialize Cuda stuff
-	cudaPrintfInit();
+	// cudaPrintfInit();
 	dim3 DimGrid(GDIMX,GDIMY);
 	#ifndef ITERATE_BLOCKS
 	dim3 DimBlock(BDIMX,1);
@@ -190,8 +190,8 @@ int main(int argc, char **argv) {
 
 	//Cuda Printf output
 	cudaDeviceSynchronize();
-	cudaPrintfDisplay(stdout, true);
-	cudaPrintfEnd();
+	// cudaPrintfDisplay(stdout, true);
+	// cudaPrintfEnd();
 
 	//Free memory on device
 	CUDA_SAFE_CALL(cudaFree(d_ctx));
@@ -299,9 +299,9 @@ __global__ void kernel_sha256d(SHA256_CTX *ctx, Nonce_result *nr, void *debug) {
 
 	#ifdef VERIFY_HASH
 	unsigned int *ref_hash = (unsigned int *) debug;
-	for(i=0; i<8; i++) {
-		cuPrintf("%.8x, %.8x\n", hash[i], ref_hash[i]);
-	}
+	// for(i=0; i<8; i++) {
+	// 	cuPrintf("%.8x, %.8x\n", hash[i], ref_hash[i]);
+	// }
 	#endif
 
 	unsigned char *hhh = (unsigned char *) hash;
