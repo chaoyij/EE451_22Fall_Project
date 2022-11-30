@@ -21,7 +21,6 @@ int main(int argc, char* argv[])
     cpuData.m_maxNumBits = maxNumBits;
     cpuData.m_maxDifficultyBits = maxDifficultyBits;
     cpuData.m_maxNumThreads = maxNumThreads;
-    cpuData.m_offset = 0;
 
     parallel_pthread_impl((void*)&cpuData);
 

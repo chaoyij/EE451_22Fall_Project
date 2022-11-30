@@ -28,7 +28,9 @@ int main(int argc, char* argv[])
     if (percentageYes)
     {
         hashes = blockX * gridY * percentageCPU;
-        hashes *= gridX / 100;
+        // printf("hashes1:%ld\n", hashes);
+        hashes = hashes * gridX / 100;
+        // printf("hashes2:%ld\n", hashes);
     }
 
     // Start two threads: one for parallel_cuda_impl and the other is for parallel_pthread_impl.

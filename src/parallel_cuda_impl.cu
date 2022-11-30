@@ -180,7 +180,7 @@ void* parallel_cuda_impl(void* threadArg)
 
     //Decodes and stores the difficulty in a 32-byte array for convenience
     unsigned int nBits = ENDIAN_SWAP_32(*((unsigned int *) (data + 72)));
-    customize_difficulty(ctx.difficulty, 2);
+    customize_difficulty(ctx.difficulty, difficulty);
     // set_difficulty(ctx.difficulty, nBits);                                //ctx.data contains padded data
 
     //Data buffer for sending debug information to/from the GPU
@@ -261,19 +261,21 @@ void* parallel_cuda_impl(void* threadArg)
     CUDA_SAFE_CALL(cudaFree(d_debug));
 
     //Output the results
-    if(h_nr.nonce_found) {
+    if(h_nr.nonce_found)
+    {
         printf("[CUDA] Nonce found! %.8x\n", h_nr.nonce);
         compute_and_print_hash(data, h_nr.nonce);
     }
-    else {
+    else
+    {
         printf("[CUDA] Nonce not found :(\n");
     }
     
     num_hashes = blockDimX;
     num_hashes *= gridDimX * gridDimY;
-    printf("[CUDA] Tested %lld hashes\n", num_hashes);
+    printf("[CUDA] Tested %ld hashes\n", num_hashes);
     printf("[CUDA] GPU execution time: %f ms\n", elapsed_gpu);
-    printf("[CUDA] Hashrate: %.2f H/s\n", num_hashes/(elapsed_gpu*1e-3));
+    printf("[CUDA] Hashrate: %.2f H/s\n", num_hashes / (elapsed_gpu * 1e-3));
 
     gpuDataPtr->m_time = elapsed_gpu * 1e-3;
 
