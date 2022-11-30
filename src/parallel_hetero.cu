@@ -10,12 +10,7 @@ extern "C" {
 
 #include "../inc/parallel_pthread.h"
 
-// CUDA Stuff
-#define BDIMX   64      //Max = 512
-#define GRIMX   8192    //MAX = 8192 65536
-#define GRIMY   8192
 __global__ void kernel_sha256d(SHA256_CTX *ctx, Nonce_result *nr, void *debug, unsigned int *hash_limit);
-
 
 inline void gpuAssert(cudaError_t code, char *file, int line, bool abort)
 {
@@ -52,9 +47,9 @@ void compute_and_print_hash(unsigned char *data, unsigned int nonce) {
 
 int main(int argc, char* argv[])
 {
-    if (argc < 6)
+    if (argc < 9)
     {
-        printf("Wrong argument. Sample correct format: ./hetero_miner maxNumBits maxDifficultyBits maxNumThreads percentageCPU percentageYes\n");
+        printf("Wrong argument. Sample correct format: ./hetero_miner maxNumBits maxDifficultyBits maxNumThreads percentageCPU percentageYes grid.x(8192) grid.y(8192) block.x(64) \n");
         return -1;
     }
 
@@ -65,28 +60,33 @@ int main(int argc, char* argv[])
     // Percentage on the job distribution
     const unsigned int percentageCPU = atoi(argv[4]);
     const unsigned int percentageYes = atoi(argv[5]);
+    
+    const unsigned int gridx = atoi(argv[6]);
+    const unsigned int gridy = atoi(argv[7]);
+    const unsigned int blckx = atoi(argv[8]);
+    
     int i, j;
     unsigned char* data = test_block;
     unsigned char hash[32];
     
-
     // Initialize Pthread Implementation
     const unsigned int MaxThreads = maxNumThreads;
     //const unsigned int hashes = (1 << maxNumBits);
 
     unsigned int hashes;
     if (!percentageYes)
-         hashes = (1 << maxNumBits);
+    {
+        hashes = (1 << maxNumBits);
+    }
     else
     {
-        hashes =  (unsigned int) BDIMX*percentageCPU/100;
-        hashes *= (unsigned int) GRIMX*GRIMY;
+        hashes =  (unsigned int) blckx*percentageCPU/100;
+        hashes *= (unsigned int) gridx*gridy;
     }
     const unsigned int threadNum = hashes <= MaxThreads ? hashes : MaxThreads;  
     const unsigned int elementsPerThread = hashes / threadNum;
     pthread_t threads[threadNum];
     ThreadData threadDataArray[threadNum];
-     
     
     // Initialize CPU CTX
     SHA256_CTX cpu_ctx;
@@ -101,8 +101,8 @@ int main(int argc, char* argv[])
     customize_difficulty(cpu_ctx.difficulty, maxDifficultyBits);
    
     // Initialize CUDA stuff
-    dim3 DimGrid(GRIMX,GRIMY);
-    dim3 DimBlock(BDIMX,1);
+    dim3 DimGrid(gridx,gridy);
+    dim3 DimBlock(blckx,1);
     float gpu_time;
     long long int num_hashes;
     SHA256_CTX gpu_ctx;
@@ -166,7 +166,6 @@ int main(int argc, char* argv[])
         }
     }
     
- 
     //Stop GPU timers
     cudaEventRecord(gpu_stop,0);
     cudaEventSynchronize(gpu_stop);
@@ -179,8 +178,6 @@ int main(int argc, char* argv[])
    
     // GPU Syncrhonize
     cudaDeviceSynchronize();
-
-
 
     // Pthread Synchronization
     for (i = 0; i < threadNum; i++)
@@ -199,13 +196,10 @@ int main(int argc, char* argv[])
         perror("clock gettime");
     }
 
-
     //Free memory on device
     CUDA_SAFE_CALL(cudaFree(d_ctx));
     CUDA_SAFE_CALL(cudaFree(d_nr));
     CUDA_SAFE_CALL(cudaFree(d_debug));
-
-
 
     // CPU Results
     cpu_time = (stop.tv_sec - start.tv_sec)+ (double)(stop.tv_nsec - start.tv_nsec)/1e9;
@@ -215,8 +209,8 @@ int main(int argc, char* argv[])
     printf("Hashrate = %f hashes/second\n", hashes / (cpu_time*1e-9));
     
     // GPU Results
-    num_hashes = BDIMX;
-    num_hashes *= GRIMX*GRIMY;
+    num_hashes = blckx;
+    num_hashes *= gridx*gridy;
     printf("\nTested %lld hashes\n", num_hashes);
     printf("GPU execution time: %f ms\n", gpu_time);
     printf("Hashrate: %.2f H/s\n", num_hashes/(gpu_time*1e-3));
@@ -260,12 +254,13 @@ __constant__ uint32_t k_[64] = {                                              0x
 
 __global__ void kernel_sha256d(SHA256_CTX *ctx, Nonce_result *nr, void *debug, unsigned int *hash_limit)
 {
-
+/*
     if(nr->nonce_found )
     {
         // printf("return: nonce found\n");
         return;
     }
+*/
     unsigned int m[64];
     unsigned int hash[8];
     unsigned int a,b,c,d,e,f,g,h,t1,t2;

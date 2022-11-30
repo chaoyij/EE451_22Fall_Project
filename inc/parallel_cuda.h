@@ -21,11 +21,6 @@ extern "C" {
     The most convenient way to form dimensions is to use a square grid of blocks
     GDIMX = sqrt(2^32/BDIMX)
 */
-#ifndef VERIFY_HASH
-#define BDIMX        64            //MAX = 512
-#define GDIMX        8192        //MAX = 65535 = 2^16-1
-#define GDIMY        GDIMX
-#endif
 
 #ifdef VERIFY_HASH
 #define BDIMX    1

@@ -9,7 +9,16 @@
 int main(int argc, char **argv) {
     int i, j;
     unsigned char *data = test_block;
+    
+    if (argc < 4)
+    {
+        printf("Wrong argument. Sample correct format: ./gpu_miner grid.x(8192) grid.y(8192) block.x(64)\n");
+        return -1;
+    }
 
+    const unsigned int gridx = atoi(argv[1]);
+    const unsigned int gridy = atoi(argv[2]);
+    const unsigned int blckx = atoi(argv[3]);
     /*
         Host Side Preprocessing
         The goal here is to prepare and compute everything that will be shared by all threads.
@@ -17,9 +26,10 @@ int main(int argc, char **argv) {
     
     //Initialize Cuda stuff
     // cudaPrintfInit();
-    dim3 DimGrid(GDIMX,GDIMY);
+    // dim3 DimGrid(GDIMX,GDIMY);
+    dim3 DimGrid(gridx,gridy);
     #ifndef ITERATE_BLOCKS
-    dim3 DimBlock(BDIMX,1);
+    dim3 DimBlock(blckx,1);
     #endif
 
     //Used to store a nonce if a block is mined
@@ -133,8 +143,8 @@ int main(int argc, char **argv) {
         printf("Nonce not found :(\n");
     }
     
-    num_hashes = BDIMX;
-    num_hashes *= GDIMX*GDIMY;
+    num_hashes = blckx;
+    num_hashes *= gridx*gridy;
     printf("Tested %lld hashes\n", num_hashes);
     printf("GPU execution time: %f ms\n", elapsed_gpu);
     printf("Hashrate: %.2f H/s\n", num_hashes/(elapsed_gpu*1e-3));
