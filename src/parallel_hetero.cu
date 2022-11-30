@@ -80,8 +80,8 @@ int main(int argc, char* argv[])
     }
     else
     {
-        hashes =  (unsigned int) blckx*percentageCPU/100;
-        hashes *= (unsigned int) gridx*gridy;
+        hashes = blckx * percentageCPU;
+        hashes = hashes * gridx * gridy / 100;
     }
     const unsigned int threadNum = hashes <= MaxThreads ? hashes : MaxThreads;  
     const unsigned int elementsPerThread = hashes / threadNum;
@@ -111,8 +111,6 @@ int main(int argc, char* argv[])
     sha256_init(&gpu_ctx);
     sha256_update(&gpu_ctx, (unsigned char*) data, 80);
     sha256_pad(&gpu_ctx);
-    // unsigned int nBits = ENDIAN_SWAP_32(*((unsigned int *) (data + 72)));
-    // set_difficulty(gpu_ctx.difficulty, nBits);
     customize_difficulty(gpu_ctx.difficulty, maxDifficultyBits);
     
     // Data buffer for sending debug information to/from the GPU
@@ -205,8 +203,8 @@ int main(int argc, char* argv[])
     cpu_time = (stop.tv_sec - start.tv_sec)+ (double)(stop.tv_nsec - start.tv_nsec)/1e9;
     // printf("Total number of threads = %ld\n", threadNum);
     printf("\nTotal number of tested hashes = %ld\n", hashes);
-    printf("Execution time = %f nano sec\n", cpu_time);
-    printf("Hashrate = %f hashes/second\n", hashes / (cpu_time*1e-9));
+    printf("Execution time = %f sec\n", cpu_time);
+    printf("Hashrate = %f hashes/second\n", hashes / cpu_time);
     
     // GPU Results
     num_hashes = blckx;
