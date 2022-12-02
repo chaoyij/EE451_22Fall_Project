@@ -45,7 +45,11 @@ int main(int argc, char* argv[])
     const unsigned int gridX = atoi(argv[6]);
     const unsigned int gridY = atoi(argv[7]);
     const unsigned int blockX = atoi(argv[8]);
-    
+
+    struct timespec e2eStart;
+    struct timespec e2eStop;
+    double e2eTime;
+
     int i, j;
     unsigned char* data = test_block;
     unsigned char hash[32];
@@ -84,7 +88,6 @@ int main(int argc, char* argv[])
     dim3 DimGrid(gridX, gridY);
     dim3 DimBlock(blockX, 1);
     float gpu_time;
-    long long int num_hashes;
     SHA256_CTX gpu_ctx;
     Nonce_result gpu_nr;
     initialize_nonce_result(&gpu_nr);
@@ -92,34 +95,39 @@ int main(int argc, char* argv[])
     sha256_update(&gpu_ctx, (unsigned char*) data, 80);
     sha256_pad(&gpu_ctx);
     customize_difficulty(gpu_ctx.difficulty, maxDifficulty);
-    
+
     // Data buffer for sending debug information to/from the GPU
     unsigned char debug[32];
     unsigned char* d_debug;
-    CUDA_SAFE_CALL(cudaMalloc((void **)&d_debug, 32 * sizeof(unsigned char)));
+    CUDA_SAFE_CALL(cudaMalloc((void **) &d_debug, 32 * sizeof(unsigned char)));
     CUDA_SAFE_CALL(cudaMemcpy(d_debug, (void *) &debug, 32 * sizeof(unsigned char), cudaMemcpyHostToDevice));
     
     // Allocate Space on Global Memory 
-    SHA256_CTX *d_ctx;
+    SHA256_CTX* d_ctx;
     Nonce_result* d_nr;
     unsigned int* d_hashes;
-    CUDA_SAFE_CALL(cudaMalloc((void **)&d_ctx, sizeof(SHA256_CTX)));
-    CUDA_SAFE_CALL(cudaMalloc((void **)&d_nr, sizeof(Nonce_result)));
+    CUDA_SAFE_CALL(cudaMalloc((void **) &d_ctx, sizeof(SHA256_CTX)));
+    CUDA_SAFE_CALL(cudaMalloc((void **) &d_nr, sizeof(Nonce_result)));
     // Checkpoint
-    CUDA_SAFE_CALL(cudaMalloc(&d_hashes, sizeof(int)));
+    CUDA_SAFE_CALL(cudaMalloc((void**) &d_hashes, sizeof(unsigned int)));
 
     //Copy data to device
     CUDA_SAFE_CALL(cudaMemcpy(d_ctx, (void *) &gpu_ctx, sizeof(SHA256_CTX), cudaMemcpyHostToDevice));
     CUDA_SAFE_CALL(cudaMemcpy(d_nr, (void *) &gpu_nr, sizeof(Nonce_result), cudaMemcpyHostToDevice));
     // Checkpoint
-    CUDA_SAFE_CALL(cudaMemcpy(d_hashes, (unsigned int*) &hashes, sizeof(int), cudaMemcpyHostToDevice ));
+    CUDA_SAFE_CALL(cudaMemcpy(d_hashes, (void*) &hashes, sizeof(unsigned int), cudaMemcpyHostToDevice));
 
     // Start GPU Timer
     cudaEvent_t gpu_start, gpu_stop;
     cudaEventCreate(&gpu_start);
     cudaEventCreate(&gpu_stop);
     cudaEventRecord(gpu_start, 0);
- 
+
+    if(clock_gettime(CLOCK_REALTIME, &e2eStart) == -1)
+    {
+        perror("clock gettime");
+    }
+
     // Start CPU Timer
     if(clock_gettime(CLOCK_REALTIME, &start) == -1)
     {
@@ -145,7 +153,7 @@ int main(int argc, char* argv[])
     }
     
     //Stop GPU timers
-    cudaEventRecord(gpu_stop,0);
+    cudaEventRecord(gpu_stop, 0);
     cudaEventSynchronize(gpu_stop);
     cudaEventElapsedTime(&gpu_time, gpu_start, gpu_stop);
     cudaEventDestroy(gpu_start);
@@ -178,20 +186,28 @@ int main(int argc, char* argv[])
     CUDA_SAFE_CALL(cudaFree(d_ctx));
     CUDA_SAFE_CALL(cudaFree(d_nr));
     CUDA_SAFE_CALL(cudaFree(d_debug));
+    CUDA_SAFE_CALL(cudaFree(d_hashes));
 
     // CPU Results
     cpu_time = (stop.tv_sec - start.tv_sec)+ (double)(stop.tv_nsec - start.tv_nsec)/1e9;
-    // printf("Total number of threads = %ld\n", threadNum);
-    printf("\nTotal number of tested hashes = %ld\n", hashes);
-    printf("Execution time = %f sec\n", cpu_time);
-    printf("Hashrate = %f hashes/second\n", hashes / cpu_time);
+
+    if(clock_gettime(CLOCK_REALTIME, &e2eStop) == -1)
+    {
+        perror("clock gettime");
+    }
+
+    e2eTime = (e2eStop.tv_sec - e2eStart.tv_sec)+ (double)(e2eStop.tv_nsec - e2eStart.tv_nsec)/1e9;
+
+    printf("\n[Pthread] Tested %ld hashes\n", hashes);
+    printf("[Pthread] Execution time = %f s\n", cpu_time);
+    printf("[Pthread] Hashrate = %f H/s\n", hashes / cpu_time);
     
     // GPU Results
-    num_hashes = blockX;
+    long long int num_hashes = blockX;
     num_hashes *= gridX * gridY;
-    printf("\nTested %lld hashes\n", num_hashes);
-    printf("GPU execution time: %f ms\n", gpu_time);
-    printf("Hashrate: %.2f H/s\n", num_hashes/(gpu_time * 1e-3));
+    printf("\n[CUDA] Tested %ld hashes\n", num_hashes);
+    printf("[CUDA] GPU execution time = %f s\n", gpu_time * 1e-3);
+    printf("[CUDA] Hashrate = %.2f H/s\n", num_hashes/(gpu_time * 1e-3));
    
     if (cpu_nr.nonce_found)
     {
@@ -210,6 +226,8 @@ int main(int argc, char* argv[])
     {
         printf("\nNonce not found :(\n");
     }
+
+    printf("\nE2E total execution time: %lf s\n", e2eTime);
 
     return 0;
 }

@@ -5,11 +5,11 @@
 #SBATCH --mem=16GB
 #SBATCH --time=1:00:00
 #SBATCH --partition=gpu 
-#SBATCH --output=gpujob.out
+#SBATCH --output=gpujob_cuda.out
 #SBATCH --gres=gpu:v100:1
-#SBATCH --error=gpujob.err
+#SBATCH --error=gpujob_cuda.err
 
 module purge
 module load nvidia-hpc-sdk
 
-./hetero_miner 24 4 8 1 1 512 512 64
+./gpu_miner 512 512 64

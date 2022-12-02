@@ -75,11 +75,10 @@ int main(int argc, char* argv[])
     }
 
     time = (stop.tv_sec - start.tv_sec)+ (double)(stop.tv_nsec - start.tv_nsec)/1e9;
-    printf("Execution time = %f nano sec\n", time * 1e9);
     printf("Total number of threads = %ld\n", threadNum);
     printf("Total number of testing hashes = %ld\n", hashes);
-    printf("Execution time = %f seconds\n", time);
-    printf("Hashrate = %f hashes/second\n", hashes / (time + 0.0));
+    printf("Execution time = %f s\n", time);
+    printf("Hashrate = %f H/s\n", hashes / (time + 0.0));
     if (nr.nonce_found)
     {
         printf("Nonce found! %.8x\n", nr.nonce);

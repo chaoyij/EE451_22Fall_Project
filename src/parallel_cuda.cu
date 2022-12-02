@@ -122,8 +122,8 @@ int main(int argc, char* argv[])
     num_hashes = blockX;
     num_hashes *= gridX * gridY;
     printf("Tested %lld hashes\n", num_hashes);
-    printf("GPU execution time: %f ms\n", elapsed_gpu);
-    printf("Hashrate: %.2f H/s\n", num_hashes/(elapsed_gpu * 1e-3));
+    printf("GPU execution time = %f s\n", elapsed_gpu * 1e-3);
+    printf("Hashrate = %.2f H/s\n", num_hashes/(elapsed_gpu * 1e-3));
 
     return 0;
 }
