@@ -1,26 +1,21 @@
-#include <stdio.h>
-#include <stdlib.h>
-
 #include "../inc/sha256.h"
 #include "../inc/utils.h"
 #include "../inc/test.h"
 
-#define NUM_EXPERIMENTS        7
+#include <stdio.h>
+#include <stdlib.h>
 
-//Define when you want to break out of the loop when the block is solved.
-//#define MINING_MODE
-
-int main(int argc, char *argv)
+int main(int argc, char* argv[])
 {
     int i, j, k;
-    unsigned char *data = test_block;
+    unsigned char* data = test_block;
     unsigned char hash[32], difficulty[32];
     SHA256_CTX ctx;
     Nonce_result nr;
 
     initialize_nonce_result(&nr);
 
-    unsigned int nBits = ENDIAN_SWAP_32(*((unsigned int *) (data + 72)));
+    unsigned int nBits = ENDIAN_SWAP_32(*((unsigned int*) (data + 72)));
     set_difficulty(difficulty, nBits);
 
     int hashes = 1;
@@ -58,6 +53,7 @@ int main(int argc, char *argv)
         printf("%d,%ld\n",hashes,get_execution_time());
         hashes <<= 1;
     }
+
     if(nr.nonce_found) 
     {
         printf("Nonce found! %.8x\n", nr.nonce);

@@ -1,48 +1,35 @@
+#include "sha256_unrolls.h"
+#include "test.h"
+
+extern "C"
+{
+    #include "../inc/sha256.h"
+    #include "../inc/utils.h"
+}
+
 #include <cstdio>
 #include <cstdlib>
 #include <stdbool.h>
 #include <stdint.h>
 
-// #include "cuPrintf.cu"
-// #include "../inc/cuPrintf.cuh"
-extern "C" {
-    #include "../inc/sha256.h"
-    #include "../inc/utils.h"
-}
-#include "sha256_unrolls.h"
-#include "test.h"
+__global__ void kernel_sha256d(SHA256_CTX* ctx, Nonce_result* nr, void* debug);
 
-//#define VERIFY_HASH        //Execute only 1 thread and verify manually
-//#define ITERATE_BLOCKS    //Don't define BDIMX and create a 65535x1 Grid
-
-/*
-    Threads = BDIMX*GDIMX*GDIMY
-    Thread Max = 2^32
-    The most convenient way to form dimensions is to use a square grid of blocks
-    GDIMX = sqrt(2^32/BDIMX)
-*/
-
-#ifdef VERIFY_HASH
-#define BDIMX    1
-#define GDIMX    1
-#define GDIMY    1
-#endif
-
-__global__ void kernel_sha256d(SHA256_CTX *ctx, Nonce_result *nr, void *debug);
-
-inline void gpuAssert(cudaError_t code, char *file, int line, bool abort)
+inline void gpuAssert(cudaError_t code, char* file, int line, bool abort)
 {
     if (code != cudaSuccess) 
     {
         fprintf(stderr,"CUDA_SAFE_CALL: %s %s %d\n", cudaGetErrorString(code), file, line);
-        if (abort) exit(code);
+        if (abort)
+        {
+            exit(code);
+        }
     }
 }
 
 #define CUDA_SAFE_CALL(ans) { gpuAssert((ans), __FILE__, __LINE__, true); }
 
 //Warning: This mmodifies the nonce value of data so do it last!
-void compute_and_print_hash(unsigned char *data, unsigned int nonce) {
+void compute_and_print_hash(unsigned char* data, unsigned int nonce) {
     unsigned char hash[32];
     SHA256_CTX ctx;
     int i;
@@ -57,13 +44,17 @@ void compute_and_print_hash(unsigned char *data, unsigned int nonce) {
     sha256_final(&ctx, hash);
 
     printf("Hash is:\n");
-    for(i=0; i<8; i++) {
+    for(i = 0; i < 8; i++)
+    {
         printf("%.8x ", ENDIAN_SWAP_32(*(((unsigned int *) hash) + i)));
     }
     printf("\n");
 }
+
 //Declare SHA-256 constants
-__constant__ uint32_t k_[64] = {                                              0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,
+__constant__ uint32_t k_[64] =
+{
+    0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,
     0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,
     0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,
     0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,
@@ -73,20 +64,18 @@ __constant__ uint32_t k_[64] = {                                              0x
     0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2
 };
 
-
 #define NONCE_VAL (gridDim.x*blockDim.x*blockIdx.y + blockDim.x*blockIdx.x + threadIdx.x)
 
-__global__ void kernel_sha256d(SHA256_CTX *ctx, Nonce_result *nr, void *debug)
+__global__ void kernel_sha256d(SHA256_CTX* ctx, Nonce_result* nr, void* debug)
 {
     unsigned int m[64];
     unsigned int hash[8];
     unsigned int a,b,c,d,e,f,g,h,t1,t2;
     int i, j;
     unsigned int nonce = NONCE_VAL;
-    // printf("current nonce Value: %d\n",nonce);
     //Compute SHA-256 Message Schedule
     unsigned int *le_data = (unsigned int *) ctx->data;
-    for(i=0; i<16; i++)
+    for(i = 0; i < 16; i++)
     {
         m[i] = le_data[i];
     }
@@ -121,12 +110,12 @@ __global__ void kernel_sha256d(SHA256_CTX *ctx, Nonce_result *nr, void *debug)
     m[7] = h + ctx->state[7];
     //Pad the input
     m[8] = 0x80000000;
-    for(i=9; i<15; i++)
+    for(i = 9; i < 15; i++)
     {
         m[i] = 0x00;
     }
     m[15] = 0x00000100;    //Write out l=256
-    for (i=16 ; i < 64; ++i)
+    for (i = 16 ; i < 64; i++)
     {
         m[i] = SIG1(m[i - 2]) + m[i - 7] + SIG0(m[i - 15]) + m[i - 16];
     }
@@ -152,15 +141,7 @@ __global__ void kernel_sha256d(SHA256_CTX *ctx, Nonce_result *nr, void *debug)
     hash[6] = ENDIAN_SWAP_32(g + 0x1f83d9ab);
     hash[7] = ENDIAN_SWAP_32(h + 0x5be0cd19);
 
-    #ifdef VERIFY_HASH
-    unsigned int *ref_hash = (unsigned int *) debug;
-    for(i=0; i<8; i++)
-    {
-       //  cuPrintf("%.8x, %.8x\n", hash[i], ref_hash[i]);
-    }
-    #endif
-
-    unsigned char *hhh = (unsigned char *) hash;
+    unsigned char* hhh = (unsigned char *) hash;
     i=0;
     while(hhh[i] == ctx->difficulty[i])
     {

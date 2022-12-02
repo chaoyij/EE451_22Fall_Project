@@ -1,20 +1,20 @@
+#include "../inc/parallel_pthread.h"
+
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
 
-#include "../inc/parallel_pthread.h"
-
 int main(int argc, char* argv[])
 {
     if (argc < 4)
     {
-        printf("Wrong argument. Sample correct format: ./parallel_pthread maxNumBits maxDifficultyBits maxNumThreads\n");
+        printf("Wrong argument. Sample correct format: ./parallel_pthread maxNumBits maxDifficulty maxNumThreads\n");
         return -1;
     }
 
     const unsigned int maxNumBits = atoi(argv[1]);
-    const unsigned int maxDifficultyBits = atoi(argv[2]);
+    const unsigned int maxDifficulty = atoi(argv[2]);
     const unsigned int maxNumThreads = atoi(argv[3]);
 
     int i, j;
@@ -38,7 +38,7 @@ int main(int argc, char* argv[])
     sha256_update(&ctx, (unsigned char*) data, 80);    //ctx.state contains a-h
     sha256_pad(&ctx);
 
-    customize_difficulty(ctx.difficulty, maxDifficultyBits);
+    customize_difficulty(ctx.difficulty, maxDifficulty);
 
     if(clock_gettime(CLOCK_REALTIME, &start) == -1)
     {

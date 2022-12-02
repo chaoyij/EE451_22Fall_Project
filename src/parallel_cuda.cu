@@ -1,14 +1,14 @@
+#include "../inc/parallel_cuda.h"
+
 #include <cstdio>
 #include <cstdlib>
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "../inc/parallel_cuda.h"
-
-
-int main(int argc, char **argv) {
+int main(int argc, char* argv[])
+{
     int i, j;
-    unsigned char *data = test_block;
+    unsigned char* data = test_block;
     
     if (argc < 4)
     {
@@ -16,20 +16,18 @@ int main(int argc, char **argv) {
         return -1;
     }
 
-    const unsigned int gridx = atoi(argv[1]);
-    const unsigned int gridy = atoi(argv[2]);
-    const unsigned int blckx = atoi(argv[3]);
+    const unsigned int gridX = atoi(argv[1]);
+    const unsigned int gridY = atoi(argv[2]);
+    const unsigned int blockX = atoi(argv[3]);
     /*
         Host Side Preprocessing
         The goal here is to prepare and compute everything that will be shared by all threads.
     */
     
     //Initialize Cuda stuff
-    // cudaPrintfInit();
-    // dim3 DimGrid(GDIMX,GDIMY);
-    dim3 DimGrid(gridx,gridy);
+    dim3 DimGrid(gridX, gridY);
     #ifndef ITERATE_BLOCKS
-    dim3 DimBlock(blckx,1);
+    dim3 DimBlock(blockX, 1);
     #endif
 
     //Used to store a nonce if a block is mined
@@ -39,12 +37,13 @@ int main(int argc, char **argv) {
     //Compute the shared portion of the SHA-256d calculation
     SHA256_CTX ctx;
     sha256_init(&ctx);
-    sha256_update(&ctx, (unsigned char *) data, 80);    //ctx.state contains a-h
+    sha256_update(&ctx, (unsigned char*) data, 80);    //ctx.state contains a-h
     sha256_pad(&ctx);
     //Rearrange endianess of data to optimize device reads
-    unsigned int *le_data = (unsigned int *)ctx.data;
+    unsigned int* le_data = (unsigned int*)ctx.data;
     unsigned int le;
-    for(i=0, j=0; i<16; i++, j+=4) {
+    for(i = 0, j = 0; i < 16; i++, j += 4)
+    {
         //Get the data out as big endian
         //Store it as little endian via x86
         //On the device side cast the pointer as int* and dereference it correctly
@@ -53,28 +52,17 @@ int main(int argc, char **argv) {
     }
 
     //Decodes and stores the difficulty in a 32-byte array for convenience
-    unsigned int nBits = ENDIAN_SWAP_32(*((unsigned int *) (data + 72)));
     customize_difficulty(ctx.difficulty, 2);
-    // set_difficulty(ctx.difficulty, nBits);                                //ctx.data contains padded data
 
     //Data buffer for sending debug information to/from the GPU
     unsigned char debug[32];
-    unsigned char *d_debug;
-    #ifdef VERIFY_HASH
-    SHA256_CTX verify;
-    sha256_init(&verify);
-    sha256_update(&verify, (unsigned char *) data, 80);
-    sha256_final(&verify, debug);
-    sha256_init(&verify);
-    sha256_update(&verify, (unsigned char *) debug, 32);
-    sha256_final(&verify, debug);
-    #endif
-    CUDA_SAFE_CALL(cudaMalloc((void **)&d_debug, 32*sizeof(unsigned char)));
-    CUDA_SAFE_CALL(cudaMemcpy(d_debug, (void *) &debug, 32*sizeof(unsigned char), cudaMemcpyHostToDevice));
+    unsigned char* d_debug;
+    CUDA_SAFE_CALL(cudaMalloc((void **)&d_debug, 32 * sizeof(unsigned char)));
+    CUDA_SAFE_CALL(cudaMemcpy(d_debug, (void *) &debug, 32 * sizeof(unsigned char), cudaMemcpyHostToDevice));
 
     //Allocate space on Global Memory
-    SHA256_CTX *d_ctx;
-    Nonce_result *d_nr;
+    SHA256_CTX* d_ctx;
+    Nonce_result* d_nr;
     CUDA_SAFE_CALL(cudaMalloc((void **)&d_ctx, sizeof(SHA256_CTX)));
     CUDA_SAFE_CALL(cudaMalloc((void **)&d_nr, sizeof(Nonce_result)));
 
@@ -88,34 +76,22 @@ int main(int argc, char **argv) {
 
     float elapsed_gpu;
     long long int num_hashes;
-    #ifdef ITERATE_BLOCKS
-    //Try different block sizes
-    for(i=1; i <= 512; i++) {
-        dim3 DimBlock(i,1);
-    #endif
-        //Start timers
-        cudaEvent_t start, stop;
-        cudaEventCreate(&start);
-        cudaEventCreate(&stop);
-        cudaEventRecord(start, 0);
+    //Start timers
+    cudaEvent_t start, stop;
+    cudaEventCreate(&start);
+    cudaEventCreate(&stop);
+    cudaEventRecord(start, 0);
 
-        //Launch Kernel
-        kernel_sha256d<<<DimGrid, DimBlock>>>(d_ctx, d_nr, (void *) d_debug);
+    //Launch Kernel
+    kernel_sha256d<<<DimGrid, DimBlock>>>(d_ctx, d_nr, (void *) d_debug);
 
-        //Stop timers
-        cudaEventRecord(stop,0);
-        cudaEventSynchronize(stop);
-        cudaEventElapsedTime(&elapsed_gpu, start, stop);
-        cudaEventDestroy(start);
-        cudaEventDestroy(stop);
+    //Stop timers
+    cudaEventRecord(stop,0);
+    cudaEventSynchronize(stop);
+    cudaEventElapsedTime(&elapsed_gpu, start, stop);
+    cudaEventDestroy(start);
+    cudaEventDestroy(stop);
 
-    #ifdef ITERATE_BLOCKS
-        //Calculate results
-        num_hashes = GDIMX*i;
-        //block size, hashrate, hashes, execution time
-        printf("%d, %.2f, %.0f, %.2f\n", i, num_hashes/(elapsed_gpu*1e-3), num_hashes, elapsed_gpu);
-    }
-    #endif
     //Copy nonce result back to host
     CUDA_SAFE_CALL(cudaMemcpy((void *) &h_nr, d_nr, sizeof(Nonce_result), cudaMemcpyDeviceToHost));
 
@@ -126,8 +102,6 @@ int main(int argc, char **argv) {
 
     //Cuda Printf output
     cudaDeviceSynchronize();
-    // cudaPrintfDisplay(stdout, true);
-    // cudaPrintfEnd();
 
     //Free memory on device
     CUDA_SAFE_CALL(cudaFree(d_ctx));
@@ -135,20 +109,21 @@ int main(int argc, char **argv) {
     CUDA_SAFE_CALL(cudaFree(d_debug));
 
     //Output the results
-    if(h_nr.nonce_found) {
+    if(h_nr.nonce_found)
+    {
         printf("Nonce found! %.8x\n", h_nr.nonce);
         compute_and_print_hash(data, h_nr.nonce);
     }
-    else {
+    else
+    {
         printf("Nonce not found :(\n");
     }
     
-    num_hashes = blckx;
-    num_hashes *= gridx*gridy;
+    num_hashes = blockX;
+    num_hashes *= gridX * gridY;
     printf("Tested %lld hashes\n", num_hashes);
     printf("GPU execution time: %f ms\n", elapsed_gpu);
-    printf("Hashrate: %.2f H/s\n", num_hashes/(elapsed_gpu*1e-3));
+    printf("Hashrate: %.2f H/s\n", num_hashes/(elapsed_gpu * 1e-3));
 
     return 0;
 }
-

@@ -35,7 +35,7 @@ void sha256_transform(SHA256_CTX* ctx, const BYTE data[])
 {
     WORD a, b, c, d, e, f, g, h, i, j, t1, t2, m[64];
 
-    for (i = 0, j = 0; i < 16; ++i, j += 4)
+    for (i = 0, j = 0; i < 16; i++, j += 4)
     {
         m[i] = (data[j] << 24) | (data[j + 1] << 16) | (data[j + 2] << 8) | (data[j + 3]);
     }
@@ -95,11 +95,12 @@ void sha256_update(SHA256_CTX* ctx, const BYTE data[], size_t len)
 {
     WORD i;
 
-    for (i = 0; i < len; ++i)
+    for (i = 0; i < len; i++)
     {
         ctx->data[ctx->datalen] = data[i];
         ctx->datalen++;
-        if (ctx->datalen == 64) {
+        if (ctx->datalen == 64)
+        {
             sha256_transform(ctx, ctx->data);
             ctx->bitlen += 512;
             ctx->datalen = 0;
@@ -116,7 +117,7 @@ void sha256_final(SHA256_CTX* ctx, BYTE hash[])
 
     // Since this implementation uses little endian byte ordering and SHA uses big endian,
     // reverse all the bytes when copying the final state to the output hash.
-    for (i = 0; i < 4; ++i)
+    for (i = 0; i < 4; i++)
     {
         hash[i]      = (ctx->state[0] >> (24 - i * 8)) & 0x000000ff;
         hash[i + 4]  = (ctx->state[1] >> (24 - i * 8)) & 0x000000ff;
@@ -146,7 +147,9 @@ void sha256_pad(SHA256_CTX* ctx)
     {
         ctx->data[i++] = 0x80;
         while (i < 56)
+        {
             ctx->data[i++] = 0x00;
+        }
     }
     //Otherwise, pad with 0s and store l in its own message block
     else
