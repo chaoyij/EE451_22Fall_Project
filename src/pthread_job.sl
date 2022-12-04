@@ -5,9 +5,9 @@
 #SBATCH --mem=16GB
 #SBATCH --time=1:00:00
 #SBATCH --partition=gpu 
-#SBATCH --output=cpujob_pthread.out
+#SBATCH --output=pthread_job.out
 #SBATCH --gres=gpu:v100:1
-#SBATCH --error=cpujob_pthread.err
+#SBATCH --error=pthread_job.err
 
 module purge
 module load nvidia-hpc-sdk

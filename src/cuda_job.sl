@@ -5,9 +5,9 @@
 #SBATCH --mem=16GB
 #SBATCH --time=1:00:00
 #SBATCH --partition=gpu 
-#SBATCH --output=gpujob_cuda.out
+#SBATCH --output=cuda_job.out
 #SBATCH --gres=gpu:v100:1
-#SBATCH --error=gpujob_cuda.err
+#SBATCH --error=cuda_job.err
 
 module purge
 module load nvidia-hpc-sdk
