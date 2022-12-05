@@ -33,7 +33,7 @@ void initialize_nonce_result(Nonce_result *nr)
 }
 
 //difficulty MUST be 32 bytes
-void set_difficulty(unsigned char *difficulty, unsigned int nBits) 
+void set_difficulty(unsigned char* difficulty, unsigned int nBits) 
 {
     int i;
     for(i = 0; i < 32; i++) 
